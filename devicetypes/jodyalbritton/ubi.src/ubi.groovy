@@ -1,7 +1,7 @@
 /**
  *  Ubi
  *
- *  Copyright 2014 Jody Albritton
+ *  Copyright 2015 Jody Albritton
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -15,38 +15,61 @@
  */
 metadata {
 	definition (name: "Ubi", namespace: "jodyalbritton", author: "jody albritton") {
-		capability "Refresh"
-   		capability "Polling"
-        capability "Temperature Measurement"
-        capability "Relative Humidity Measurement"
-        capability "Sensor"
-        capability "Illuminance Measurement"
-        capability "Speech Synthesis"
-        
-        attribute "soundlevel", "enum"
-		attribute "airpressure", "enum"
-	}
+	capability "Refresh"
+   	capability "Polling"
+    capability "Temperature Measurement"
+    capability "Relative Humidity Measurement"
+    capability "Sensor"
+    capability "Illuminance Measurement"
+    capability "Speech Synthesis"
+      
+    //attributes added because capabilities do not exist 
+    
+    attribute "soundlevel", "enum"
+    attribute "airpressure", "enum"
+	
+    }
 
 	simulator {
 		// TODO: define status and reply messages here
 	}
     
     preferences {
-    	 input "tempPref", "bool", title: "Farenheit",
-              description: "Temp meausurements in Farenheit.", defaultValue: true,
-              required: false, displayDuringSetup: true
-    }
-	
-  
-
-  
-	tiles(scale: 2) {
-        multiAttributeTile(name:"richTemperature", type:"generic", width:6, height:4) {
-        	tileAttribute("device.temperature", key: "PRIMARY_CONTROL") {
-      			attributeState "temperature", label: '${currentValue}°', backgroundColor:"#ffa81e"
-        	}
+        section ("Use Fahrenheit for temps...") {
+             input "tempPref", "bool", title: "Farenheit",
+                  description: "Temp meausurements in Fahrenheit.", defaultValue: true,
+                  required: false, displayDuringSetup: true
         }
-
+	}
+  
+    
+    
+	tiles {
+		valueTile("temperature", "device.temperature", width: 1, height: 1, canChangeIcon: false) {
+        	
+            	state("temperature", label: '${currentValue}°', unit:units, backgroundColors: [
+                
+                // Celsius Color Range 
+                [value: 0, color: "#153591"],
+				[value: 7, color: "#1e9cbb"],
+				[value: 15, color: "#90d2a7"],
+				[value: 23, color: "#44b621"],
+				[value: 29, color: "#f1d801"],
+				[value: 33, color: "#d04e00"],
+				[value: 36, color: "#bc2323"],
+				// Fahrenheit Color Range
+				[value: 40, color: "#153591"],
+				[value: 44, color: "#1e9cbb"],
+				[value: 59, color: "#90d2a7"],
+				[value: 74, color: "#44b621"],
+				[value: 84, color: "#f1d801"],
+				[value: 92, color: "#d04e00"],
+				[value: 96, color: "#bc2323"]
+                
+                
+                ]
+            )
+        }
         valueTile("humidity", "device.humidity", inactiveLabel: false) {
             state "default", label:'${currentValue}%', unit:"Humidity"
         }
@@ -63,8 +86,8 @@ metadata {
             state "default", action:"polling.poll", icon:"st.secondary.refresh"
         }
         
-        main(["richTemperature", "humidity","illuminance", "soundlevel", "airpressure"])
-        details(["richTemperature", "humidity", "illuminance", "soundlevel", "airpressure", "refresh"])
+        main(["temperature", "humidity","illuminance", "soundlevel", "airpressure"])
+        details(["temperature", "humidity", "illuminance", "soundlevel", "airpressure", "refresh"])
         
 	}
 }
@@ -72,9 +95,6 @@ metadata {
 // parse events into attributes
     def parse(String description) {
 	log.debug "Parsing '${description}'"
-	// TODO: handle 'humidity' attribute
-	// TODO: handle 'illuminance' attribute
-	// TODO: handle 'temperature' attribute
 
 }
 
@@ -93,13 +113,8 @@ void speak(message) {
 
 
 //poll the device
-private def scale(){
-  return "F"
-}
-
 
 void poll() {
-	log.debug  settings.tempPref
 	log.debug "Executing 'poll' using parent SmartApp for ${device.deviceNetworkId}"
     def results =  parent.pollChild(device.deviceNetworkId)
     
@@ -125,24 +140,21 @@ def parseEvents(results) {
 
 
   
-
+def units = ""        
 def cToF(temp) {
 	if (settings.tempPref){ 
 		return temp * 1.8 + 32
-     
+        units = "F"
     }else{ 
     	return temp
-     
+        units = "C"
     }
 }
 
 
+// Refresh Command 
 def refresh() {
-   
 	log.debug "Executing 'refresh'"
-   
 	poll()
-   	
 
-    
 }
